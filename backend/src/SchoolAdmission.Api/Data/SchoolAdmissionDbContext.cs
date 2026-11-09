@@ -17,6 +17,9 @@ public class SchoolAdmissionDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.HasSequence<int>("class_seq").StartsAt(1).IncrementsBy(1);
+        modelBuilder.HasSequence<int>("hold_seq").StartsAt(1).IncrementsBy(1);
+
         modelBuilder.Entity<ClassEntity>(entity =>
         {
             entity.ToTable("classes");

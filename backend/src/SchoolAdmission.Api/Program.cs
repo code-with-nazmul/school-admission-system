@@ -21,6 +21,9 @@ builder.Services.AddDbContext<SchoolAdmissionDbContext>(options =>
     options.UseNpgsql(connectionString);
 });
 
+// Register Application Services
+builder.Services.AddScoped<SchoolAdmission.Api.Services.IIdGenerator, SchoolAdmission.Api.Services.IdGenerator>();
+
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
