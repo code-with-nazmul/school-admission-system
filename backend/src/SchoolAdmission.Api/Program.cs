@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SchoolAdmission.Api.Data;
+using SchoolAdmission.Api.Workers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +27,9 @@ builder.Services.AddScoped<SchoolAdmission.Api.Services.IIdGenerator, SchoolAdmi
 builder.Services.AddScoped<SchoolAdmission.Api.Services.IClassService, SchoolAdmission.Api.Services.ClassService>();
 builder.Services.AddScoped<SchoolAdmission.Api.Services.IHoldService, SchoolAdmission.Api.Services.HoldService>();
 
+// Register Background Workers
+builder.Services.AddHostedService<HoldExpirationWorker>();
+
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
@@ -39,6 +43,38 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Auto-initialize database schema and sequences with retry logic for Docker
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SchoolAdmissionDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    for (int retry = 1; retry <= 5; retry++)
+    {
+        try
+        {
+            await db.Database.EnsureCreatedAsync();
+            if (db.Database.IsNpgsql())
+            {
+                await db.Database.ExecuteSqlRawAsync("CREATE SEQUENCE IF NOT EXISTS class_seq START 1;");
+                await db.Database.ExecuteSqlRawAsync("CREATE SEQUENCE IF NOT EXISTS hold_seq START 1;");
+            }
+            logger.LogInformation("Database schema and sequences initialized successfully.");
+            break;
+        }
+        catch (Exception ex)
+        {
+            if (retry == 5)
+            {
+                logger.LogWarning(ex, "Could not initialize database automatically on startup. Ensure database is running.");
+                break;
+            }
+            logger.LogWarning("Waiting for database connection... (Attempt {Retry}/5)", retry);
+            await Task.Delay(2000);
+        }
+    }
+}
 
 // Configure the HTTP request pipeline
 app.UseMiddleware<SchoolAdmission.Api.Middleware.ExceptionHandlingMiddleware>();
