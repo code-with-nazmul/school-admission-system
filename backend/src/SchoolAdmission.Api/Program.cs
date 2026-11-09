@@ -24,6 +24,7 @@ builder.Services.AddDbContext<SchoolAdmissionDbContext>(options =>
 // Register Application Services
 builder.Services.AddScoped<SchoolAdmission.Api.Services.IIdGenerator, SchoolAdmission.Api.Services.IdGenerator>();
 builder.Services.AddScoped<SchoolAdmission.Api.Services.IClassService, SchoolAdmission.Api.Services.ClassService>();
+builder.Services.AddScoped<SchoolAdmission.Api.Services.IHoldService, SchoolAdmission.Api.Services.HoldService>();
 
 // Add services to the container
 builder.Services.AddControllers();
