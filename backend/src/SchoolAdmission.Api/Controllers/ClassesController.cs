@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SchoolAdmission.Api.DTOs;
 using SchoolAdmission.Api.Services;
+using SchoolAdmission.Api.Validators;
 
 namespace SchoolAdmission.Api.Controllers;
 
@@ -9,10 +10,12 @@ namespace SchoolAdmission.Api.Controllers;
 public class ClassesController : ControllerBase
 {
     private readonly IClassService _classService;
+    private readonly IHoldService _holdService;
 
-    public ClassesController(IClassService classService)
+    public ClassesController(IClassService classService, IHoldService holdService)
     {
         _classService = classService;
+        _holdService = holdService;
     }
 
     [HttpPost]
@@ -39,5 +42,15 @@ public class ClassesController : ControllerBase
         var classDetail = await _classService.GetClassByIdAsync(classId, cancellationToken);
         return Ok(classDetail);
     }
-}
 
+    [HttpPost("{classId}/holds")]
+    public async Task<ActionResult<CreateHoldResponse>> CreateHold(
+        string classId,
+        [FromHeader(Name = "X-Student-Id")] string? studentIdHeader,
+        CancellationToken cancellationToken)
+    {
+        var studentId = StudentIdValidator.Validate(studentIdHeader);
+        var response = await _holdService.CreateHoldAsync(classId, studentId, cancellationToken);
+        return Created($"/holds/{response.HoldId}", response);
+    }
+}
