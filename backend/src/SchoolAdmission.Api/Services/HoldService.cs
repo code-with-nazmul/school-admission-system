@@ -8,6 +8,7 @@ namespace SchoolAdmission.Api.Services;
 
 public class HoldService : IHoldService
 {
+    private static readonly SemaphoreSlim _nonNpgsqlLock = new(1, 1);
     private readonly SchoolAdmissionDbContext _context;
     private readonly IIdGenerator _idGenerator;
     private readonly IConfiguration _configuration;
@@ -42,77 +43,99 @@ public class HoldService : IHoldService
         var durationSeconds = GetHoldDurationSeconds();
         var expiresAt = now.AddSeconds(durationSeconds);
 
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-
-        // Pessimistic Row Lock on the class to prevent race conditions (Rule 1 & Bonus 2.6)
-        ClassEntity? classEntity;
-        if (_context.Database.IsNpgsql())
+        var isNpgsql = _context.Database.IsNpgsql();
+        if (!isNpgsql)
         {
-            classEntity = await _context.Classes
-                .FromSqlInterpolated($"SELECT * FROM classes WHERE id = {classId} FOR UPDATE")
-                .FirstOrDefaultAsync(cancellationToken);
-        }
-        else
-        {
-            classEntity = await _context.Classes
-                .FirstOrDefaultAsync(c => c.Id == classId, cancellationToken);
+            await _nonNpgsqlLock.WaitAsync(cancellationToken);
         }
 
-        if (classEntity == null)
+        try
         {
-            throw new NotFoundException($"Class with ID '{classId}' was not found.");
+            await using var transaction = isNpgsql
+                ? await _context.Database.BeginTransactionAsync(cancellationToken)
+                : null;
+
+            // Pessimistic Row Lock on the class to prevent race conditions (Rule 1 & Bonus 2.6)
+            ClassEntity? classEntity;
+            if (isNpgsql)
+            {
+                classEntity = await _context.Classes
+                    .FromSqlInterpolated($"SELECT * FROM classes WHERE id = {classId} FOR UPDATE")
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+            else
+            {
+                classEntity = await _context.Classes
+                    .FirstOrDefaultAsync(c => c.Id == classId, cancellationToken);
+            }
+
+            if (classEntity == null)
+            {
+                throw new NotFoundException($"Class with ID '{classId}' was not found.");
+            }
+
+            // Rule 3: Single active application or confirmed admission per class
+            var hasActiveApplication = await _context.Holds
+                .AnyAsync(h => h.ClassId == classId &&
+                               h.StudentId == studentId &&
+                               (h.Status == HoldStatus.Confirmed ||
+                               (h.Status == HoldStatus.Held && h.ExpiresAt > now)),
+                               cancellationToken);
+
+            if (hasActiveApplication)
+            {
+                throw new ValidationException("You already have an active application or confirmed admission for this class.");
+            }
+
+            // Rule 1: Count active seats under the exclusive row lock
+            var confirmedCount = await _context.Holds
+                .CountAsync(h => h.ClassId == classId && h.Status == HoldStatus.Confirmed, cancellationToken);
+
+            var heldCount = await _context.Holds
+                .CountAsync(h => h.ClassId == classId && h.Status == HoldStatus.Held && h.ExpiresAt > now, cancellationToken);
+
+            if (confirmedCount + heldCount >= classEntity.TotalSeats)
+            {
+                throw new ConflictException("No available seats in this class.");
+            }
+
+            var holdId = await _idGenerator.NextHoldIdAsync(cancellationToken);
+
+            var hold = new HoldEntity
+            {
+                Id = holdId,
+                ClassId = classId,
+                StudentId = studentId,
+                Status = HoldStatus.Held,
+                ExpiresAt = expiresAt,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            _context.Holds.Add(hold);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            if (transaction != null)
+            {
+                await transaction.CommitAsync(cancellationToken);
+            }
+
+            return new CreateHoldResponse
+            {
+                HoldId = hold.Id,
+                ClassId = hold.ClassId,
+                StudentId = hold.StudentId,
+                Status = hold.Status,
+                ExpiresAt = hold.ExpiresAt
+            };
         }
-
-        // Rule 3: Single active application or confirmed admission per class
-        var hasActiveApplication = await _context.Holds
-            .AnyAsync(h => h.ClassId == classId &&
-                           h.StudentId == studentId &&
-                           (h.Status == HoldStatus.Confirmed ||
-                           (h.Status == HoldStatus.Held && h.ExpiresAt > now)),
-                           cancellationToken);
-
-        if (hasActiveApplication)
+        finally
         {
-            throw new ValidationException("You already have an active application or confirmed admission for this class.");
+            if (!isNpgsql)
+            {
+                _nonNpgsqlLock.Release();
+            }
         }
-
-        // Rule 1: Count active seats under the exclusive row lock
-        var confirmedCount = await _context.Holds
-            .CountAsync(h => h.ClassId == classId && h.Status == HoldStatus.Confirmed, cancellationToken);
-
-        var heldCount = await _context.Holds
-            .CountAsync(h => h.ClassId == classId && h.Status == HoldStatus.Held && h.ExpiresAt > now, cancellationToken);
-
-        if (confirmedCount + heldCount >= classEntity.TotalSeats)
-        {
-            throw new ConflictException("No available seats in this class.");
-        }
-
-        var holdId = await _idGenerator.NextHoldIdAsync(cancellationToken);
-
-        var hold = new HoldEntity
-        {
-            Id = holdId,
-            ClassId = classId,
-            StudentId = studentId,
-            Status = HoldStatus.Held,
-            ExpiresAt = expiresAt,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-
-        _context.Holds.Add(hold);
-        await _context.SaveChangesAsync(cancellationToken);
-        await transaction.CommitAsync(cancellationToken);
-
-        return new CreateHoldResponse
-        {
-            HoldId = hold.Id,
-            ClassId = hold.ClassId,
-            StudentId = hold.StudentId,
-            Status = hold.Status,
-            ExpiresAt = hold.ExpiresAt
-        };
     }
 
     public async Task<HoldStatusResponse> GetHoldByIdAsync(string holdId, CancellationToken cancellationToken = default)
