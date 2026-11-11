@@ -244,7 +244,7 @@ export default function App() {
                       const isConfirmed = myHolds.some(
                         (h) => h.classId === cls.id && h.status === 'CONFIRMED'
                       );
-                      const isHeld = myHolds.some(
+                      const heldHold = myHolds.find(
                         (h) =>
                           h.classId === cls.id &&
                           h.status === 'HELD' &&
@@ -256,8 +256,11 @@ export default function App() {
                           key={cls.id}
                           classItem={cls}
                           isConfirmedInThisClass={isConfirmed}
-                          isHeldInThisClass={isHeld}
+                          isHeldInThisClass={!!heldHold}
+                          heldHoldId={heldHold?.holdId}
                           onApply={handleApply}
+                          onConfirm={handleConfirm}
+                          onCancel={handleCancel}
                           isLoading={actionLoading}
                         />
                       );

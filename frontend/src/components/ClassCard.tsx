@@ -1,11 +1,15 @@
-import { Sun, Sunset, Users, ArrowRight, Loader2, CheckCircle2, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { Sun, Sunset, Users, ArrowRight, Loader2, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { ClassItem } from '../types';
 
 interface ClassCardProps {
   classItem: ClassItem;
   isConfirmedInThisClass: boolean;
   isHeldInThisClass: boolean;
+  heldHoldId?: string;
   onApply: (classId: string) => Promise<void>;
+  onConfirm?: (holdId: string) => Promise<void>;
+  onCancel?: (holdId: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -13,12 +17,37 @@ export const ClassCard: React.FC<ClassCardProps> = ({
   classItem,
   isConfirmedInThisClass,
   isHeldInThisClass,
+  heldHoldId,
   onApply,
+  onConfirm,
+  onCancel,
   isLoading,
 }) => {
+  const [clickedAction, setClickedAction] = useState<'confirm' | 'cancel' | null>(null);
+
   const isMorning = classItem.name.toLowerCase().includes('morning') ||
                     classItem.name.includes('প্রভাতী');
   const isFull = classItem.availableSeats <= 0;
+
+  const handleConfirmClick = async () => {
+    if (!heldHoldId || !onConfirm) return;
+    setClickedAction('confirm');
+    try {
+      await onConfirm(heldHoldId);
+    } finally {
+      setClickedAction(null);
+    }
+  };
+
+  const handleCancelClick = async () => {
+    if (!heldHoldId || !onCancel) return;
+    setClickedAction('cancel');
+    try {
+      await onCancel(heldHoldId);
+    } finally {
+      setClickedAction(null);
+    }
+  };
 
   return (
     <div
@@ -91,13 +120,44 @@ export const ClassCard: React.FC<ClassCardProps> = ({
             <span>আপনার ভর্তি নিশ্চিত (Confirmed)</span>
           </button>
         ) : isHeldInThisClass ? (
-          <button
-            disabled
-            className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 cursor-not-allowed shadow-xs"
-          >
-            <Clock className="w-4 h-4 text-amber-600" />
-            <span>আবেদন সংরক্ষিত (Seat Held)</span>
-          </button>
+          <div className="space-y-2">
+            <div className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <span>আবেদন সংরক্ষিত (Seat Held)</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={handleCancelClick}
+                disabled={isLoading}
+                title="আবেদন বাতিল করুন"
+                className="w-full flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors disabled:opacity-50 cursor-pointer shadow-xs active:scale-[0.98]"
+              >
+                {clickedAction === 'cancel' && isLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600 shrink-0" />
+                ) : (
+                  <XCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                )}
+                <span className="truncate">বাতিল (Cancel)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmClick}
+                disabled={isLoading}
+                title="ভর্তি ফি প্রদান করে আসন নিশ্চিত করুন"
+                className="w-full flex items-center justify-center gap-1 py-2 px-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] border border-emerald-700 transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+              >
+                {clickedAction === 'confirm' && isLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                ) : (
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                )}
+                <span className="truncate">নিশ্চিত করুন (Pay)</span>
+              </button>
+            </div>
+          </div>
         ) : isFull ? (
           <button
             disabled
