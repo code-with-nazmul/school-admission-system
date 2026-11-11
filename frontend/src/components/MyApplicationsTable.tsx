@@ -70,12 +70,25 @@ export const MyApplicationsTable: React.FC<MyApplicationsTableProps> = ({ holds 
                 <td className="px-6 py-3.5 font-mono font-medium text-slate-900">{h.holdId}</td>
                 <td className="px-6 py-3.5 font-semibold text-slate-900">{h.className}</td>
                 <td className="px-6 py-3.5">{renderStatusBadge(h.status)}</td>
-                <td className="px-6 py-3.5 font-mono text-slate-500">
-                  {new Date(h.expiresAt).toLocaleTimeString('bn-BD', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                  })}
+                <td className="px-6 py-3.5 text-xs">
+                  {h.status === 'CONFIRMED' ? (
+                    <span className="text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                      — (স্থায়ী ভর্তি)
+                    </span>
+                  ) : h.status === 'CANCELLED' ? (
+                    <span className="text-slate-400 font-medium">—</span>
+                  ) : h.status === 'EXPIRED' ? (
+                    <span className="text-slate-400 font-medium">মেয়াদ শেষ</span>
+                  ) : (
+                    <span className="font-mono text-amber-700 font-medium">
+                      {new Date(h.expiresAt).toLocaleTimeString('bn-BD', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })}{' '}
+                      পর্যন্ত
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}
