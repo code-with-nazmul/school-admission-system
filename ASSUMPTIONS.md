@@ -1,0 +1,3 @@
+1. The screens (Class তৈরি (school admin), Class তালিকা, আবেদন, আমার আবেদন) are not separate pages. They can be a section of a page. So I did not create separate page for them.
+
+2. Birth registration number does not has to follow official format (for example, first four digit is birth year in official format, etc). So I did not create any checking rule for birth registration to check if it follows official format.
