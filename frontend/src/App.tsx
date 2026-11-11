@@ -241,18 +241,22 @@ export default function App() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {classes.map((cls) => {
-                      const hasActiveInClass = myHolds.some(
+                      const isConfirmed = myHolds.some(
+                        (h) => h.classId === cls.id && h.status === 'CONFIRMED'
+                      );
+                      const isHeld = myHolds.some(
                         (h) =>
                           h.classId === cls.id &&
-                          (h.status === 'CONFIRMED' ||
-                            (h.status === 'HELD' && new Date(h.expiresAt).getTime() > Date.now())),
+                          h.status === 'HELD' &&
+                          new Date(h.expiresAt).getTime() > Date.now()
                       );
 
                       return (
                         <ClassCard
                           key={cls.id}
                           classItem={cls}
-                          hasActiveHoldInThisClass={hasActiveInClass}
+                          isConfirmedInThisClass={isConfirmed}
+                          isHeldInThisClass={isHeld}
                           onApply={handleApply}
                           isLoading={actionLoading}
                         />

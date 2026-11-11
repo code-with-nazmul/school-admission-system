@@ -27,7 +27,8 @@ yarn-error.log*
 
 
 *.pdf
-*.md
+Asst_Software_Engineer_Project_Assignment*
+
 
 .DS_Store
 Thumbs.db

@@ -1,16 +1,18 @@
-import { Sun, Sunset, Users, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import { Sun, Sunset, Users, ArrowRight, Loader2, CheckCircle2, Clock } from 'lucide-react';
 import { ClassItem } from '../types';
 
 interface ClassCardProps {
   classItem: ClassItem;
-  hasActiveHoldInThisClass: boolean;
+  isConfirmedInThisClass: boolean;
+  isHeldInThisClass: boolean;
   onApply: (classId: string) => Promise<void>;
   isLoading: boolean;
 }
 
 export const ClassCard: React.FC<ClassCardProps> = ({
   classItem,
-  hasActiveHoldInThisClass,
+  isConfirmedInThisClass,
+  isHeldInThisClass,
   onApply,
   isLoading,
 }) => {
@@ -19,7 +21,15 @@ export const ClassCard: React.FC<ClassCardProps> = ({
   const isFull = classItem.availableSeats <= 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 hover:border-indigo-300 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+    <div
+      className={`bg-white rounded-2xl border p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between ${
+        isConfirmedInThisClass
+          ? 'border-emerald-300 ring-2 ring-emerald-100'
+          : isHeldInThisClass
+          ? 'border-amber-300 ring-2 ring-amber-100'
+          : 'border-slate-200 hover:border-indigo-300'
+      }`}
+    >
       {/* Header with Name and Shift */}
       <div>
         <div className="flex items-center justify-between gap-2 mb-3">
@@ -72,13 +82,21 @@ export const ClassCard: React.FC<ClassCardProps> = ({
 
       {/* Action Button */}
       <div>
-        {hasActiveHoldInThisClass ? (
+        {isConfirmedInThisClass ? (
           <button
             disabled
-            className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-900 border border-emerald-300 cursor-not-allowed shadow-xs"
           >
-            <CheckCircle2 className="w-4 h-4 text-indigo-600" />
-            <span>আপনার আবেদন চলমান</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>আপনার ভর্তি নিশ্চিত (Confirmed)</span>
+          </button>
+        ) : isHeldInThisClass ? (
+          <button
+            disabled
+            className="w-full flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 cursor-not-allowed shadow-xs"
+          >
+            <Clock className="w-4 h-4 text-amber-600" />
+            <span>আবেদন সংরক্ষিত (Seat Held)</span>
           </button>
         ) : isFull ? (
           <button
@@ -106,4 +124,3 @@ export const ClassCard: React.FC<ClassCardProps> = ({
     </div>
   );
 };
-
