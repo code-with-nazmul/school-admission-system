@@ -4,10 +4,11 @@ import { StudentLogin } from './components/StudentLogin';
 import { ActiveHoldCard } from './components/ActiveHoldCard';
 import { ClassCard } from './components/ClassCard';
 import { MyApplicationsTable } from './components/MyApplicationsTable';
+import { AdminDashboard } from './components/AdminDashboard';
 import { Toast, ToastMessage } from './components/Toast';
 import { api, ApiClientError } from './api/client';
 import { ClassItem, StudentHold } from './types';
-import { User, ShieldCheck, RefreshCw } from 'lucide-react';
+import { User, RefreshCw } from 'lucide-react';
 
 export default function App() {
   const [mode, setMode] = useState<'student' | 'admin'>('student');
@@ -135,6 +136,22 @@ export default function App() {
     }
   };
 
+  // Handle Create Class (Admin)
+  const handleCreateClass = async (name: string, totalSeats: number) => {
+    setActionLoading(true);
+
+    try {
+      const created = await api.createClass({ name, totalSeats });
+      showToast(`নতুন ক্লাস '${created.name}' (${created.id}) সফলভাবে তৈরি হয়েছে।`, 'success');
+      await fetchData(true);
+    } catch (err: unknown) {
+      const message = err instanceof ApiClientError ? err.message : 'ক্লাস তৈরি সম্ভব হয়নি।';
+      showToast(message, 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Find active held application
   const activeHold = myHolds.find(
     (h) => h.status === 'HELD' && new Date(h.expiresAt).getTime() > Date.now(),
@@ -252,24 +269,13 @@ export default function App() {
             </div>
           )
         ) : (
-          /* Admin View Container Placeholder (Step 5) */
-          <div className="space-y-6">
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-3 shadow-xs">
-              <div className="w-10 h-10 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-amber-900">অ্যাডমিন কন্ট্রোল প্যানেল</h2>
-                <p className="text-xs text-amber-700">ক্লাস তৈরি ও আসন ব্যবস্থাপনার জন্য অ্যাডমিন মোড সক্রিয় রয়েছে।</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500 shadow-xs">
-              <p className="text-sm">
-                অ্যাডমিন প্যানেলের উপাদানসমূহ (নতুন ক্লাস তৈরির ফর্ম ও লাইভ ক্লাস মনিটর) পরবর্তী স্টেপ ৫-এ যুক্ত হবে।
-              </p>
-            </div>
-          </div>
+          /* Admin View Container */
+          <AdminDashboard
+            classes={classes}
+            onCreateClass={handleCreateClass}
+            isLoading={actionLoading}
+            onRefresh={() => fetchData()}
+          />
         )}
       </main>
 
