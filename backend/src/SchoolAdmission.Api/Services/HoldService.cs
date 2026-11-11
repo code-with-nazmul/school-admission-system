@@ -60,7 +60,7 @@ public class HoldService : IHoldService
             if (isNpgsql)
             {
                 classEntity = await _context.Classes
-                    .FromSqlInterpolated($"SELECT * FROM classes WHERE id = {classId} FOR UPDATE")
+                    .FromSqlInterpolated($"SELECT * FROM classes WHERE \"Id\" = {classId} FOR UPDATE")
                     .FirstOrDefaultAsync(cancellationToken);
             }
             else
