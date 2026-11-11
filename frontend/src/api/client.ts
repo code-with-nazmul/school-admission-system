@@ -7,7 +7,18 @@ import {
   ApiError,
 } from '../types';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+declare global {
+  interface Window {
+    __ENV__?: {
+      VITE_API_URL?: string;
+    };
+  }
+}
+
+const API_BASE_URL =
+  (typeof window !== 'undefined' && window.__ENV__?.VITE_API_URL) ||
+  import.meta.env.VITE_API_URL ||
+  'http://localhost:8080';
 
 export class ApiClientError extends Error {
   public status: number;
