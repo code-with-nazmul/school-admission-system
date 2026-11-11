@@ -1,7 +1,6 @@
-bin/
-obj/
-TestResults/
-.vs/
-.vscode/
-.idea/
-
+**/bin/
+**/obj/
+**/TestResults/
+**/.vs/
+**/.vscode/
+**/.idea/

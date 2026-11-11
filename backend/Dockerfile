@@ -14,8 +14,7 @@ RUN dotnet restore src/SchoolAdmission.Api/SchoolAdmission.Api.csproj
 COPY src/SchoolAdmission.Api/ src/SchoolAdmission.Api/
 
 # Build and publish release binaries
-WORKDIR /app/src/SchoolAdmission.Api
-RUN dotnet publish -c Release -o /app/publish --no-restore
+RUN dotnet publish src/SchoolAdmission.Api/SchoolAdmission.Api.csproj -c Release -o /app/publish
 
 # Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
@@ -27,4 +26,3 @@ EXPOSE 8080
 COPY --from=build /app/publish .
 
 ENTRYPOINT ["dotnet", "SchoolAdmission.Api.dll"]
-
