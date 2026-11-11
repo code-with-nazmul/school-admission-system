@@ -17,14 +17,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const [gradeInput, setGradeInput] = useState('Class 6');
   const [shift, setShift] = useState<'Morning Shift' | 'Day Shift'>('Morning Shift');
-  const [totalSeats, setTotalSeats] = useState<number>(120);
+  const [totalSeatsInput, setTotalSeatsInput] = useState<string>('120');
 
+  const toEnglishDigits = (str: string) =>
+    str.replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
+
+  const parsedSeats = parseInt(toEnglishDigits(totalSeatsInput), 10) || 0;
   const fullName = `${gradeInput.trim()} - ${shift}`;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!gradeInput.trim() || totalSeats <= 0) return;
-    await onCreateClass(fullName, totalSeats);
+    if (!gradeInput.trim() || parsedSeats <= 0) return;
+    await onCreateClass(fullName, parsedSeats);
   };
 
   // Quick preset grade selector
@@ -88,7 +92,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-7 shadow-xs">
         <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-100">
           <PlusCircle className="w-5 h-5 text-indigo-600" />
-          <h3 className="text-base font-bold text-slate-900">নতুন ক্লাস ও শাখা যুক্ত করুন (Create Class)</h3>
+          <h3 className="text-base font-bold text-slate-900">Create New Class & Shift</h3>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -96,14 +100,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* Grade Input */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                ক্লাসের নাম (Class Name)
+                Class Name
               </label>
               <input
                 type="text"
                 required
                 value={gradeInput}
                 onChange={(e) => setGradeInput(e.target.value)}
-                placeholder="যেমন: Class 6"
+                placeholder="e.g. Class 6"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm font-medium"
               />
 
@@ -125,7 +129,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* Shift Selector */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                শিফট নির্বাচন (Shift)
+                Shift Selection
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
@@ -154,38 +158,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <span>Day Shift</span>
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400">প্রতিটি শিফট স্বতন্ত্র ক্লাস হিসেবে সংরক্ষিত হবে।</p>
+              <p className="text-[11px] text-slate-400">Each shift is created as a separate class.</p>
             </div>
 
             {/* Total Seats */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                মোট আসন সংখ্যা (Total Seats)
+                Total Seats
               </label>
               <input
-                type="number"
-                min={1}
+                type="text"
+                inputMode="numeric"
                 required
-                value={totalSeats}
-                onChange={(e) => setTotalSeats(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm font-semibold"
+                value={totalSeatsInput}
+                onChange={(e) => setTotalSeatsInput(toEnglishDigits(e.target.value.replace(/[^\d০-৯]/g, '')))}
+                placeholder="e.g. 120"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm font-semibold font-mono"
               />
-              <p className="text-[11px] text-slate-400">যেমন: ১২০ টি আসন</p>
+              <p className="text-[11px] text-slate-400">Enter total capacity (e.g. 120)</p>
             </div>
           </div>
 
           {/* Preview & Submit Bar */}
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <span className="block text-[11px] font-medium text-slate-500">ক্লাস তৈরির প্রিভিউ:</span>
+              <span className="block text-[11px] font-medium text-slate-500">Preview:</span>
               <span className="font-bold text-slate-900 text-sm">
-                {fullName} <span className="font-normal text-slate-500">({totalSeats} টি আসন)</span>
+                {fullName} <span className="font-normal text-slate-500">({parsedSeats} seats)</span>
               </span>
             </div>
 
             <button
               type="submit"
-              disabled={isLoading || !gradeInput.trim() || totalSeats <= 0}
+              disabled={isLoading || !gradeInput.trim() || parsedSeats <= 0}
               className="flex items-center justify-center gap-2 py-2.5 px-6 rounded-xl font-bold text-xs text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] transition-all shadow-xs hover:shadow disabled:opacity-50 cursor-pointer"
             >
               {isLoading ? (
@@ -193,7 +198,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               ) : (
                 <PlusCircle className="w-4 h-4" />
               )}
-              <span>নতুন ক্লাস তৈরি করুন (Create Class)</span>
+              <span>Create Class</span>
             </button>
           </div>
         </form>
