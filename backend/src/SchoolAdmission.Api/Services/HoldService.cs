@@ -40,8 +40,6 @@ public class HoldService : IHoldService
         CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
-        var durationSeconds = GetHoldDurationSeconds();
-        var expiresAt = now.AddSeconds(durationSeconds);
 
         var isNpgsql = _context.Database.IsNpgsql();
         if (!isNpgsql)
@@ -73,6 +71,12 @@ public class HoldService : IHoldService
             {
                 throw new NotFoundException($"Class with ID '{classId}' was not found.");
             }
+
+            // Duration: use class-specific duration if configured, else default to HOLD_DURATION_SECONDS (Rule 2)
+            var durationSeconds = (classEntity.HoldDurationSeconds.HasValue && classEntity.HoldDurationSeconds.Value > 0)
+                ? classEntity.HoldDurationSeconds.Value
+                : GetHoldDurationSeconds();
+            var expiresAt = now.AddSeconds(durationSeconds);
 
             // Rule 3: Single active application or confirmed admission per class
             var hasActiveApplication = await _context.Holds
@@ -126,7 +130,8 @@ public class HoldService : IHoldService
                 ClassId = hold.ClassId,
                 StudentId = hold.StudentId,
                 Status = hold.Status,
-                ExpiresAt = hold.ExpiresAt
+                ExpiresAt = hold.ExpiresAt,
+                CreatedAt = hold.CreatedAt
             };
         }
         finally
@@ -160,7 +165,8 @@ public class HoldService : IHoldService
             HoldId = hold.Id,
             ClassId = hold.ClassId,
             Status = status,
-            ExpiresAt = hold.ExpiresAt
+            ExpiresAt = hold.ExpiresAt,
+            CreatedAt = hold.CreatedAt
         };
     }
 
@@ -281,7 +287,8 @@ public class HoldService : IHoldService
                 ClassId = h.ClassId,
                 ClassName = h.Class?.Name ?? string.Empty,
                 Status = status,
-                ExpiresAt = h.ExpiresAt
+                ExpiresAt = h.ExpiresAt,
+                CreatedAt = h.CreatedAt
             };
         }).ToList();
     }

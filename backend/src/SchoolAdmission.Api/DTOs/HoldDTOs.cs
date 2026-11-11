@@ -18,6 +18,9 @@ public class CreateHoldResponse
 
     [JsonPropertyName("expiresAt")]
     public DateTime ExpiresAt { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; }
 }
 
 public class HoldStatusResponse
@@ -33,6 +36,9 @@ public class HoldStatusResponse
 
     [JsonPropertyName("expiresAt")]
     public DateTime ExpiresAt { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; }
 }
 
 public class ConfirmHoldResponse
@@ -60,5 +66,8 @@ public class StudentHoldResponse
 
     [JsonPropertyName("expiresAt")]
     public DateTime ExpiresAt { get; set; }
+
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; }
 }
 

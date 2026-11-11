@@ -6,6 +6,7 @@ public class ClassEntity
     public int SequenceNumber { get; set; }
     public string Name { get; set; } = string.Empty;
     public int TotalSeats { get; set; }
+    public int? HoldDurationSeconds { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<HoldEntity> Holds { get; set; } = new List<HoldEntity>();

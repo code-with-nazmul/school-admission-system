@@ -9,6 +9,9 @@ public class CreateClassRequest
 
     [JsonPropertyName("totalSeats")]
     public int TotalSeats { get; set; }
+
+    [JsonPropertyName("holdDurationSeconds")]
+    public int? HoldDurationSeconds { get; set; }
 }
 
 public class ClassResponse
@@ -21,6 +24,9 @@ public class ClassResponse
 
     [JsonPropertyName("totalSeats")]
     public int TotalSeats { get; set; }
+
+    [JsonPropertyName("holdDurationSeconds")]
+    public int? HoldDurationSeconds { get; set; }
 }
 
 public class ClassDetailResponse
@@ -33,6 +39,9 @@ public class ClassDetailResponse
 
     [JsonPropertyName("totalSeats")]
     public int TotalSeats { get; set; }
+
+    [JsonPropertyName("holdDurationSeconds")]
+    public int? HoldDurationSeconds { get; set; }
 
     [JsonPropertyName("heldSeats")]
     public int HeldSeats { get; set; }

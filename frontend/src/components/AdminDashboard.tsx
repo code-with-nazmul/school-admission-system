@@ -4,7 +4,7 @@ import { ClassItem } from '../types';
 
 interface AdminDashboardProps {
   classes: ClassItem[];
-  onCreateClass: (name: string, totalSeats: number) => Promise<void>;
+  onCreateClass: (name: string, totalSeats: number, holdDurationSeconds?: number) => Promise<void>;
   isLoading: boolean;
   onRefresh: () => Promise<void>;
 }
@@ -18,17 +18,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [gradeInput, setGradeInput] = useState('Class 6');
   const [shift, setShift] = useState<'Morning Shift' | 'Day Shift'>('Morning Shift');
   const [totalSeatsInput, setTotalSeatsInput] = useState<string>('120');
+  const [holdDurationInput, setHoldDurationInput] = useState<string>('600');
 
   const toEnglishDigits = (str: string) =>
     str.replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d).toString());
 
   const parsedSeats = parseInt(toEnglishDigits(totalSeatsInput), 10) || 0;
+  const parsedDuration = parseInt(toEnglishDigits(holdDurationInput), 10) || 600;
   const fullName = `${gradeInput.trim()} - ${shift}`;
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!gradeInput.trim() || parsedSeats <= 0) return;
-    await onCreateClass(fullName, parsedSeats);
+    await onCreateClass(fullName, parsedSeats, parsedDuration);
   };
 
   // Quick preset grade selector
@@ -96,7 +98,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Grade Input */}
             <div className="space-y-2">
               <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
@@ -142,7 +144,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   }`}
                 >
                   <Sun className="w-4 h-4 text-amber-500" />
-                  <span>Morning Shift</span>
+                  <span>Morning</span>
                 </button>
 
                 <button
@@ -155,10 +157,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   }`}
                 >
                   <Sunset className="w-4 h-4 text-blue-500" />
-                  <span>Day Shift</span>
+                  <span>Day</span>
                 </button>
               </div>
-              <p className="text-[11px] text-slate-400">Each shift is created as a separate class.</p>
+              <p className="text-[11px] text-slate-400">Separate class per shift.</p>
             </div>
 
             {/* Total Seats */}
@@ -175,7 +177,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 placeholder="e.g. 120"
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm font-semibold font-mono"
               />
-              <p className="text-[11px] text-slate-400">Enter total capacity (e.g. 120)</p>
+              <p className="text-[11px] text-slate-400">Seat capacity (e.g. 120)</p>
+            </div>
+
+            {/* Hold Duration (Seconds) */}
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                Hold Duration (Seconds)
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                required
+                value={holdDurationInput}
+                onChange={(e) => setHoldDurationInput(toEnglishDigits(e.target.value.replace(/[^\d০-৯]/g, '')))}
+                placeholder="600"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm font-semibold font-mono"
+              />
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setHoldDurationInput('60')}
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-100 hover:bg-amber-200 text-amber-800 transition-colors"
+                >
+                  60s (Test)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHoldDurationInput('300')}
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                >
+                  300s (5m)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHoldDurationInput('600')}
+                  className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-100 hover:bg-indigo-200 text-indigo-700 transition-colors"
+                >
+                  600s (Default)
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400">Default: 600s (10 min). Editable per Rule 2.</p>
             </div>
           </div>
 
@@ -184,7 +226,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div>
               <span className="block text-[11px] font-medium text-slate-500">Preview:</span>
               <span className="font-bold text-slate-900 text-sm">
-                {fullName} <span className="font-normal text-slate-500">({parsedSeats} seats)</span>
+                {fullName} <span className="font-normal text-slate-500">({parsedSeats} seats · {parsedDuration}s hold)</span>
               </span>
             </div>
 
@@ -223,6 +265,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <th className="px-6 py-3">আইডি</th>
                   <th className="px-6 py-3">ক্লাসের নাম ও শাখা</th>
                   <th className="px-6 py-3">মোট আসন</th>
+                  <th className="px-6 py-3">মেয়াদ (Hold TTL)</th>
                   <th className="px-6 py-3">সংরক্ষিত (Held)</th>
                   <th className="px-6 py-3">নিশ্চিত (Confirmed)</th>
                   <th className="px-6 py-3">খালি আসন</th>
@@ -237,6 +280,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <td className="px-6 py-3.5 font-mono font-medium text-slate-900">{cls.id}</td>
                       <td className="px-6 py-3.5 font-bold text-slate-900">{cls.name}</td>
                       <td className="px-6 py-3.5 font-semibold text-slate-800">{cls.totalSeats}</td>
+                      <td className="px-6 py-3.5 font-mono text-slate-500">{cls.holdDurationSeconds ? `${cls.holdDurationSeconds}s` : '600s'}</td>
                       <td className="px-6 py-3.5 font-semibold text-amber-700">{cls.heldSeats}</td>
                       <td className="px-6 py-3.5 font-semibold text-blue-700">{cls.confirmedSeats}</td>
                       <td className="px-6 py-3.5 font-extrabold text-emerald-700">{cls.availableSeats}</td>

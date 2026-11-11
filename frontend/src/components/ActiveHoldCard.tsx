@@ -49,8 +49,12 @@ export const ActiveHoldCard: React.FC<ActiveHoldCardProps> = ({
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  // 600s is default hold duration for progress bar
-  const progressPercent = Math.min(100, Math.max(0, (secondsRemaining / 600) * 100));
+  // Dynamic hold duration calculation for progress bar (defaults to 600s if createdAt not present)
+  const totalDuration = hold.createdAt
+    ? Math.max(1, Math.floor((new Date(hold.expiresAt).getTime() - new Date(hold.createdAt).getTime()) / 1000))
+    : 600;
+
+  const progressPercent = Math.min(100, Math.max(0, (secondsRemaining / totalDuration) * 100));
 
   return (
     <div className="bg-white rounded-2xl border-2 border-indigo-500 shadow-md p-6 relative overflow-hidden transition-all">

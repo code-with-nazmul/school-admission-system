@@ -36,6 +36,7 @@ public class ClassService : IClassService
             Id = classId,
             Name = request.Name.Trim(),
             TotalSeats = request.TotalSeats,
+            HoldDurationSeconds = request.HoldDurationSeconds > 0 ? request.HoldDurationSeconds : null,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -46,7 +47,8 @@ public class ClassService : IClassService
         {
             Id = classEntity.Id,
             Name = classEntity.Name,
-            TotalSeats = classEntity.TotalSeats
+            TotalSeats = classEntity.TotalSeats,
+            HoldDurationSeconds = classEntity.HoldDurationSeconds
         };
     }
 
@@ -62,6 +64,7 @@ public class ClassService : IClassService
                 c.Id,
                 c.Name,
                 c.TotalSeats,
+                c.HoldDurationSeconds,
                 ConfirmedSeats = c.Holds.Count(h => h.Status == HoldStatus.Confirmed),
                 HeldSeats = c.Holds.Count(h => h.Status == HoldStatus.Held && h.ExpiresAt > now)
             })
@@ -72,6 +75,7 @@ public class ClassService : IClassService
             Id = c.Id,
             Name = c.Name,
             TotalSeats = c.TotalSeats,
+            HoldDurationSeconds = c.HoldDurationSeconds,
             HeldSeats = c.HeldSeats,
             ConfirmedSeats = c.ConfirmedSeats,
             AvailableSeats = Math.Max(0, c.TotalSeats - (c.ConfirmedSeats + c.HeldSeats))
@@ -90,6 +94,7 @@ public class ClassService : IClassService
                 c.Id,
                 c.Name,
                 c.TotalSeats,
+                c.HoldDurationSeconds,
                 ConfirmedSeats = c.Holds.Count(h => h.Status == HoldStatus.Confirmed),
                 HeldSeats = c.Holds.Count(h => h.Status == HoldStatus.Held && h.ExpiresAt > now)
             })
@@ -105,6 +110,7 @@ public class ClassService : IClassService
             Id = classData.Id,
             Name = classData.Name,
             TotalSeats = classData.TotalSeats,
+            HoldDurationSeconds = classData.HoldDurationSeconds,
             HeldSeats = classData.HeldSeats,
             ConfirmedSeats = classData.ConfirmedSeats,
             AvailableSeats = Math.Max(0, classData.TotalSeats - (classData.ConfirmedSeats + classData.HeldSeats))

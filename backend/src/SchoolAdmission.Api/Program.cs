@@ -59,6 +59,7 @@ using (var scope = app.Services.CreateScope())
             {
                 await db.Database.ExecuteSqlRawAsync("CREATE SEQUENCE IF NOT EXISTS class_seq START 1;");
                 await db.Database.ExecuteSqlRawAsync("CREATE SEQUENCE IF NOT EXISTS hold_seq START 1;");
+                await db.Database.ExecuteSqlRawAsync("ALTER TABLE classes ADD COLUMN IF NOT EXISTS \"HoldDurationSeconds\" integer;");
             }
             logger.LogInformation("Database schema and sequences initialized successfully.");
             break;

@@ -137,11 +137,11 @@ export default function App() {
   };
 
   // Handle Create Class (Admin)
-  const handleCreateClass = async (name: string, totalSeats: number) => {
+  const handleCreateClass = async (name: string, totalSeats: number, holdDurationSeconds?: number) => {
     setActionLoading(true);
 
     try {
-      const created = await api.createClass({ name, totalSeats });
+      const created = await api.createClass({ name, totalSeats, holdDurationSeconds });
       showToast(`নতুন ক্লাস '${created.name}' (${created.id}) সফলভাবে তৈরি হয়েছে।`, 'success');
       await fetchData(true);
     } catch (err: unknown) {
